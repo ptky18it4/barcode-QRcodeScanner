@@ -1,0 +1,5 @@
+<RCC>
+  <qresource prefix="qrcode">
+    <file>qr-code-scanner.gif</file>
+  </qresource>
+</RCC>
