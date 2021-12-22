@@ -2,20 +2,90 @@ from __future__ import print_function
 import pyzbar.pyzbar as pyzbar
 import numpy as np
 import cv2
+import sys
 
-def decode(im) :
-  # Find barcodes and QR codes
-  decodedObjects = pyzbar.decode(im)
+from PyQt5 import QtWidgets, QtCore
+from PyQt5.QtGui import *
+from PyQt5.QtWidgets import *
+from PyQt5.QtCore import *
+from PyQt5 import QtCore
+from time import sleep
 
-  # Print results
-  for obj in decodedObjects:
-    print('Type : ', obj.type)
-    print('Data : ', str(obj.data),'\n')
+class MainWindow(QtWidgets.QDialog):
+  def __init__(self):
+    super(MainWindow, self).__init__()
+    # set the title
+    self.setWindowTitle("Phạm Trung Kỳ - Nguyễn Hương Mai")
 
-  return decodedObjects
+    self.VBL = QVBoxLayout()
+    self.FeedLabel = QLabel()
+    self.VBL.addWidget(self.FeedLabel)
 
+    self.QrCodeLabel = QLabel("Data...")
+    self.QrCodeLabel.setStyleSheet("QLabel { font-size: 16px,  }")
+    self.QrCodeLabel.setOpenExternalLinks(True)
+    self.QrCodeLabel.setWordWrap(True)
+    self.VBL.addWidget(self.QrCodeLabel)
+    # Cancel
+    self.CancelBTN = QPushButton("Cancel")
+    self.CancelBTN.clicked.connect(self.CancelFeed)
+    self.VBL.addWidget(self.CancelBTN)
 
+    # Worker 1
+    self.workerThread = WorkerThread()
+
+    self.workerThread.start()
+    self.workerThread.ImageUpdate.connect(self.ImageUpdateSlot)
+    self.workerThread.Data.connect(self.DataReady)
+    self.setLayout(self.VBL)
+
+  def DataReady(self, data):
+    self.QrCodeLabel.setText(data)
+
+  def ImageUpdateSlot(self, Image):
+    self.FeedLabel.setPixmap(QPixmap.fromImage(Image))
+
+  def CancelFeed(self):
+    self.Worker1.stop()
+
+class WorkerThread(QtCore.QThread):
+  ImageUpdate = pyqtSignal(QImage)
+  Data = pyqtSignal(object)
+  def run(self):
+    self.ThreadActive = True
+    Capture = cv2.VideoCapture(0)
+    while self.ThreadActive:
+      ret, frame = Capture.read()
+      if ret:
+        #=================================================
+        decodedObjects = pyzbar.decode(frame)
+
+        # Print results
+        for obj in decodedObjects:
+          self.Data.emit(obj.type + " => " + str(obj.data.decode("utf-8")))
+          sleep(0.01)
+
+        #=================================================
+        Image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        FlippedImage = cv2.flip(Image, 1)
+        ConvertToQtFormat = QImage(FlippedImage.data, FlippedImage.shape[1], FlippedImage.shape[0],
+                                   QImage.Format_RGB888)
+        Pic = ConvertToQtFormat.scaled(640, 480, Qt.KeepAspectRatio)
+        self.ImageUpdate.emit(Pic)
+        sleep(0.01)
+
+  def stop(self):
+    self.ThreadActive = False
+    self.quit()
+
+# Main
+if __name__ == "__main__":
+    App = QApplication(sys.argv)
+    Root = MainWindow()
+    Root.show()
+    sys.exit(App.exec())
 # Display barcode and QR code location
+# Will inject later
 def display(im, decodedObjects):
 
   # Loop over all decoded objects
@@ -47,36 +117,4 @@ def display(im, decodedObjects):
   cv2.imshow("Results", resized)
   cv2.waitKey(0)
 
-
-# Main
-if __name__ == '__main__':
-
-  # Read image
-  im = cv2.imread('qrcode_fb.png')
-
-  decodedObjects = decode(im)
-  display(im, decodedObjects)
-
-  # define a video capture object
-  vid = cv2.VideoCapture(0)
-
-  while (True):
-
-    # Capture the video frame
-    # by frame
-    ret, frame = vid.read()
-
-    # Display the resulting frame
-    cv2.imshow('frame', frame)
-
-    # the 'q' button is set as the
-    # quitting button you may use any
-    # desired button of your choice
-    if cv2.waitKey(1) & 0xFF == ord('q'):
-      break
-
-  # After the loop release the cap object
-  vid.release()
-  # Destroy all the windows
-  cv2.destroyAllWindows()
 
