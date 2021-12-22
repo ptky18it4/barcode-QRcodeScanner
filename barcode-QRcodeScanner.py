@@ -4,32 +4,21 @@ import numpy as np
 import cv2
 import sys
 
-from PyQt5 import QtWidgets, QtCore
+from PyQt5 import QtWidgets, QtCore, uic
 from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 from PyQt5 import QtCore
 from time import sleep
 
-class MainWindow(QtWidgets.QDialog):
+from gui import Ui_Fcode
+class MainWindow(QtWidgets.QMainWindow):
   def __init__(self):
-    super(MainWindow, self).__init__()
+    super().__init__()
+    self.uic = Ui_Fcode()
+    self.uic.setupUi(self)
     # set the title
     self.setWindowTitle("Phạm Trung Kỳ - Nguyễn Hương Mai")
-
-    self.VBL = QVBoxLayout()
-    self.FeedLabel = QLabel()
-    self.VBL.addWidget(self.FeedLabel)
-
-    self.QrCodeLabel = QLabel("Data...")
-    self.QrCodeLabel.setStyleSheet("QLabel { font-size: 16px,  }")
-    self.QrCodeLabel.setOpenExternalLinks(True)
-    self.QrCodeLabel.setWordWrap(True)
-    self.VBL.addWidget(self.QrCodeLabel)
-    # Cancel
-    self.CancelBTN = QPushButton("Cancel")
-    self.CancelBTN.clicked.connect(self.CancelFeed)
-    self.VBL.addWidget(self.CancelBTN)
 
     # Worker 1
     self.workerThread = WorkerThread()
@@ -37,13 +26,13 @@ class MainWindow(QtWidgets.QDialog):
     self.workerThread.start()
     self.workerThread.ImageUpdate.connect(self.ImageUpdateSlot)
     self.workerThread.Data.connect(self.DataReady)
-    self.setLayout(self.VBL)
+    self.uic.CancelBTN.clicked.connect(self.CancelFeed)
 
   def DataReady(self, data):
-    self.QrCodeLabel.setText(data)
+    self.uic.QrCodeData.setText(data)
 
   def ImageUpdateSlot(self, Image):
-    self.FeedLabel.setPixmap(QPixmap.fromImage(Image))
+    self.uic.FeedLabel.setPixmap(QPixmap.fromImage(Image))
 
   def CancelFeed(self):
     self.Worker1.stop()
@@ -62,7 +51,7 @@ class WorkerThread(QtCore.QThread):
 
         # Print results
         for obj in decodedObjects:
-          self.Data.emit(obj.type + " => " + str(obj.data.decode("utf-8")))
+          self.Data.emit(str(obj.data.decode("utf-8")))
           sleep(0.01)
 
         #=================================================
