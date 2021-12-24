@@ -53,9 +53,9 @@ class Ui_Fcode(object):
         self.FeedLabel.setObjectName("FeedLabel")
         self.gridLayout.addWidget(self.FeedLabel, 0, 0, 0, 0)
         self.QrCodeData = QtWidgets.QLabel(Fcode)
-        self.QrCodeData.setStyleSheet("QLabel {color: '#FFFFFF'; font-size: 18px}")
+        self.QrCodeData.setStyleSheet("QLabel {color: '#FFFFFF'; font-size: 20px; text-align: justify; background-clor: black}")
         self.QrCodeData.setWordWrap(True)
-        self.QrCodeData.setGeometry(QtCore.QRect(550, 85, 250, 30))
+        self.QrCodeData.setGeometry(QtCore.QRect(550, 85, 500, 500))
         self.QrCodeData.setObjectName("QrCodeData")
         self.labelData = QtWidgets.QLabel(Fcode)
         self.labelData.setGeometry(QtCore.QRect(10, 510, 47, 16))
@@ -68,7 +68,9 @@ class Ui_Fcode(object):
         _translate = QtCore.QCoreApplication.translate
         Fcode.setWindowTitle(_translate("Fcode", "Frame"))
         self.CancelBTN.setText(_translate("Fcode", "Quit"))
-        self.FeedLabel.setStyleSheet("QLabel {border:5px solid white; border-radius: 20px; background-color: transparent;}")
+        self.FeedLabel.setStyleSheet("QLabel {border:5px solid white;"
+                                     " border-radius: 20px; "
+                                     "background-color: transparent;}")
         self.FeedLabel.setMinimumSize(QtCore.QSize(300, 300))
         self.FeedLabel.setMaximumSize(QtCore.QSize(300, 300))
         self.movie = QMovie("./res/qr-code-scanner.gif")

@@ -51,9 +51,26 @@ class WorkerThread(QtCore.QThread):
 
         # Print results
         for obj in decodedObjects:
+          # =================================================
+          points = obj.polygon
+
+          # If the points do not form a quad, find convex hull
+          if len(points) > 4:
+            hull = cv2.convexHull(np.array([point for point in points], dtype=np.float32))
+            hull = list(map(tuple, np.squeeze(hull)))
+          else:
+            hull = points;
+
+          # Number of points in the convex hull
+          n = len(hull)
+
+          # Draw the convext hull
+          for j in range(0, n):
+            cv2.line(frame, hull[j], hull[(j + 1) % n], (255, 0, 0), 3)
+
+          # =================================================
           self.Data.emit(str(obj.data.decode("utf-8")))
           sleep(0.01)
-
         #=================================================
         Image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         FlippedImage = cv2.flip(Image, 1)
