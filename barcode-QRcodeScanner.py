@@ -1,4 +1,7 @@
 from __future__ import print_function
+
+from threading import Thread
+
 import pyzbar.pyzbar as pyzbar
 import numpy as np
 import cv2
@@ -11,78 +14,116 @@ from PyQt5.QtCore import *
 from PyQt5 import QtCore
 from time import sleep
 
+import csv
+
 from gui import Ui_Fcode
+
 class MainWindow(QtWidgets.QMainWindow):
-  def __init__(self):
-    super().__init__()
-    self.uic = Ui_Fcode()
-    self.uic.setupUi(self)
-    # set the title
-    self.setWindowTitle("Phạm Trung Kỳ - Nguyễn Hương Mai")
+    listData = []
 
-    # Worker 1
-    self.workerThread = WorkerThread()
+    def __init__(self):
+        super().__init__()
+        self.uic = Ui_Fcode()
+        self.uic.setupUi(self)
 
-    self.workerThread.start()
-    self.workerThread.ImageUpdate.connect(self.ImageUpdateSlot)
-    self.workerThread.Data.connect(self.DataReady)
-    self.uic.CancelBTN.clicked.connect(self.CancelFeed)
+        # set the title
+        self.setWindowTitle("Phạm Trung Kỳ - Nguyễn Hương Mai")
 
-  def DataReady(self, data):
-    self.uic.QrCodeData.setText(data)
+        # Worker 1
+        self.workerThread = WorkerThread()
+        self.workerThread.start()
+        self.workerThread.ImageUpdate.connect(self.ImageUpdateSlot)
+        self.workerThread.Data.connect(self.DataReady)
+        self.workerThread.List.connect(self.ListReady)
+        self.uic.CancelBTN.clicked.connect(self.CancelFeed)
 
-  def ImageUpdateSlot(self, Image):
-    self.uic.FeedLabel.setPixmap(QPixmap.fromImage(Image))
+    def DataReady(self, data):
+        self.uic.QrCodeData.setText(data)
 
-  def CancelFeed(self):
-    self.Worker1.stop()
+    def ListReady(self, list):
+        self.uic.listWidget.clear()
+        self.uic.listWidget.addItems(list)
+        self.listData = list
+
+    def ImageUpdateSlot(self, Image):
+        self.uic.FeedLabel.setPixmap(QPixmap.fromImage(Image))
+
+    def threaded_function(self):
+        with open('data.csv', 'w', newline='', encoding='utf-8') as csvfile:
+            writer = csv.writer(csvfile)
+            writer.writerows(self.listData)
+            sleep(0.01)
+
+    def CancelFeed(self, list):
+        # self.workerThread.stop()
+        # print("Hello")
+        thread = Thread(target=self.threaded_function)
+        thread.start()
+        thread.join()
+        print("Done")
+
 
 class WorkerThread(QtCore.QThread):
-  ImageUpdate = pyqtSignal(QImage)
-  Data = pyqtSignal(object)
-  def run(self):
-    self.ThreadActive = True
-    Capture = cv2.VideoCapture(0)
-    while self.ThreadActive:
-      ret, frame = Capture.read()
-      if ret:
-        #=================================================
-        decodedObjects = pyzbar.decode(frame)
+    ImageUpdate = pyqtSignal(QImage)
+    Data = pyqtSignal(object)
+    List = pyqtSignal(list)
 
-        # Print results
-        for obj in decodedObjects:
-          # =================================================
-          points = obj.polygon
+    def run(self):
+        self.ThreadActive = True
+        Capture = cv2.VideoCapture(0)
+        list = []
+        while self.ThreadActive:
+            ret, frame = Capture.read()
+            if ret:
+                # =================================================
+                decodedObjects = pyzbar.decode(frame)
 
-          # If the points do not form a quad, find convex hull
-          if len(points) > 4:
-            hull = cv2.convexHull(np.array([point for point in points], dtype=np.float32))
-            hull = list(map(tuple, np.squeeze(hull)))
-          else:
-            hull = points;
+                # Print results
+                for obj in decodedObjects:
 
-          # Number of points in the convex hull
-          n = len(hull)
+                    #
+                    item = str(obj.data.decode("utf-8"))
+                    if item in list:
+                        pass
+                    else:
+                        list.append(str(obj.data.decode("utf-8")))
+                        self.List.emit(list)
+                        sleep(0.01)
 
-          # Draw the convext hull
-          for j in range(0, n):
-            cv2.line(frame, hull[j], hull[(j + 1) % n], (255, 0, 0), 3)
+                    # Display barcode and QR code location
+                    if obj.type == "QRCODE":
+                        points = obj.polygon
 
-          # =================================================
-          self.Data.emit(str(obj.data.decode("utf-8")))
-          sleep(0.01)
-        #=================================================
-        Image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        FlippedImage = cv2.flip(Image, 1)
-        ConvertToQtFormat = QImage(FlippedImage.data, FlippedImage.shape[1], FlippedImage.shape[0],
-                                   QImage.Format_RGB888)
-        Pic = ConvertToQtFormat.scaled(640, 480, Qt.KeepAspectRatio)
-        self.ImageUpdate.emit(Pic)
-        sleep(0.01)
+                        # If the points do not form a quad, find convex hull
+                        if len(points) > 4:
+                            hull = cv2.convexHull(np.array([point for point in points], dtype=np.float32))
+                            hull = list(map(tuple, np.squeeze(hull)))
+                        else:
+                            hull = points;
 
-  def stop(self):
-    self.ThreadActive = False
-    self.quit()
+                        # Number of points in the convex hull
+                        n = len(hull)
+
+                        # Draw the convext hull
+                        for j in range(0, n):
+                            cv2.line(frame, hull[j], hull[(j + 1) % n], (255, 0, 0), 3)
+                        # =================================================
+                        self.Data.emit(str(obj.data.decode("utf-8")))
+                        sleep(0.01)
+
+                # Export image
+                Image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                FlippedImage = cv2.flip(Image, 1)
+                ConvertToQtFormat = QImage(FlippedImage.data, FlippedImage.shape[1], FlippedImage.shape[0],
+                                           QImage.Format_RGB888)
+                Pic = ConvertToQtFormat.scaled(640, 480, Qt.KeepAspectRatio)
+                self.ImageUpdate.emit(Pic)
+                sleep(0.01)
+
+    def stop(self):
+        self.ThreadActive = False
+        self.quit()
+
 
 # Main
 if __name__ == "__main__":
@@ -90,37 +131,3 @@ if __name__ == "__main__":
     Root = MainWindow()
     Root.show()
     sys.exit(App.exec())
-# Display barcode and QR code location
-# Will inject later
-def display(im, decodedObjects):
-
-  # Loop over all decoded objects
-  for decodedObject in decodedObjects:
-    points = decodedObject.polygon
-
-    # If the points do not form a quad, find convex hull
-    if len(points) > 4 :
-      hull = cv2.convexHull(np.array([point for point in points], dtype=np.float32))
-      hull = list(map(tuple, np.squeeze(hull)))
-    else :
-      hull = points;
-
-    # Number of points in the convex hull
-    n = len(hull)
-
-    # Draw the convext hull
-    for j in range(0,n):
-      cv2.line(im, hull[j], hull[ (j+1) % n], (255,0,0), 3)
-
-  # Resize image
-  scale_percent = 60  # percent of original size
-  width = int(im.shape[1] * scale_percent / 100)
-  height = int(im.shape[0] * scale_percent / 100)
-  dim = (width, height)
-  resized = cv2.resize(im, dim, interpolation=cv2.INTER_AREA)
-
-  # Display results
-  cv2.imshow("Results", resized)
-  cv2.waitKey(0)
-
-

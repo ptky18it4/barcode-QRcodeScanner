@@ -9,8 +9,8 @@
 
 
 from PyQt5 import QtCore, QtGui, QtWidgets
+from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QMovie
-
 
 class Ui_Fcode(object):
     def setupUi(self, Fcode):
@@ -21,45 +21,61 @@ class Ui_Fcode(object):
         self.background.setMouseTracking(False)
         self.background.setAutoFillBackground(False)
         self.background.setStyleSheet("background-image: url(:/background/background.jpg);")
-        self.background.setText("")
         self.background.setPixmap(QtGui.QPixmap(":/background/background.jpg"))
         self.background.setScaledContents(True)
         self.background.setWordWrap(False)
         self.background.setOpenExternalLinks(False)
         self.background.setObjectName("background")
+
         self.CancelBTN = QtWidgets.QPushButton(Fcode)
-        self.CancelBTN.setGeometry(QtCore.QRect(870, 510, 182, 51))
-        self.CancelBTN.setSizeIncrement(QtCore.QSize(50, 50))
-        self.CancelBTN.setStyleSheet("QPushButton#btnGoToHome {\n"
+        self.CancelBTN.setGeometry(QtCore.QRect(870, 500, 150, 51))
+        self.CancelBTN.setSizeIncrement(QtCore.QSize(30, 50))
+        self.CancelBTN.setStyleSheet("QPushButton#CancelBTN {\n"
                                     "    background-color: \"#FFFFFF\";\n"
                                     "    border-style: outset;\n"
-                                    "    border-radius: 10px;\n"
+                                    "    border-radius: 5px;\n"
                                     "    font: bold 16px;\n"
-                                    "    min-width: 10em;\n"
-                                    "    padding: 6px;\n"
+                                    "    min-width: 5em;\n"
+                                    "    padding: 2px;\n"
                                     "    color: rgb(45, 7, 0);\n"
                                     "}")
         self.CancelBTN.setAutoRepeat(False)
         self.CancelBTN.setAutoDefault(False)
         self.CancelBTN.setDefault(False)
         self.CancelBTN.setObjectName("CancelBTN")
+
+        self.current = QtWidgets.QLabel(Fcode)
+        self.current.setGeometry(QtCore.QRect(600, 20, 300, 100))
+        self.current.setStyleSheet("QLabel {color: '#FFFFFF'; font-size: 20px; font-wight: bold; font-weight: bold;}")
+
+        self.history = QtWidgets.QLabel(Fcode)
+        self.history.setGeometry(QtCore.QRect(600, 220, 300, 100))
+        self.history.setStyleSheet("QLabel {color: '#FFFFFF'; font-size: 20px; font-wight: bold;font-weight: bold;}")
+
+        self.listWidget = QtWidgets.QListWidget(Fcode)
+        self.listWidget.setGeometry(QtCore.QRect(600, 300, 300, 150))
+        self.listWidget.setStyleSheet("QListWidget { background: transparent; border-radius: 10px; padding: 5px; border: 4px solid white;} "
+                                      "QListWidget::item { background: white; border-radius: 4px; padding: 2px; margin: 2px } "
+                                      "QListWidget::item:selected { background: blue; }")
+        self.listWidget.show()
+
         self.gridLayoutWidget = QtWidgets.QWidget(Fcode)
         self.gridLayoutWidget.setGeometry(QtCore.QRect(10, 10, 701, 471))
         self.gridLayoutWidget.setObjectName("gridLayoutWidget")
         self.gridLayout = QtWidgets.QGridLayout(self.gridLayoutWidget)
         self.gridLayout.setContentsMargins(0, 0, 0, 0)
         self.gridLayout.setObjectName("gridLayout")
+
         self.FeedLabel = QtWidgets.QLabel(self.gridLayoutWidget)
         self.FeedLabel.setObjectName("FeedLabel")
         self.gridLayout.addWidget(self.FeedLabel, 0, 0, 0, 0)
-        self.QrCodeData = QtWidgets.QLabel(Fcode)
-        self.QrCodeData.setStyleSheet("QLabel {color: '#FFFFFF'; font-size: 20px; text-align: justify; background-clor: black}")
-        self.QrCodeData.setWordWrap(True)
-        self.QrCodeData.setGeometry(QtCore.QRect(550, 85, 500, 500))
+        self.QrCodeData = QtWidgets.QTextEdit(Fcode)
+        self.QrCodeData.setAlignment(Qt.AlignLeft | Qt.AlignTop)
+        self.QrCodeData.setStyleSheet("QTextEdit {color: '#FFFFFF'; font-size: 16px; text-align: center; border: 4px solid white;"
+                                     " border-radius: 10px; padding: 5px;"
+                                     "background-color: transparent;}")
+        self.QrCodeData.setGeometry(QtCore.QRect(600, 90, 300, 150))
         self.QrCodeData.setObjectName("QrCodeData")
-        self.labelData = QtWidgets.QLabel(Fcode)
-        self.labelData.setGeometry(QtCore.QRect(10, 510, 47, 16))
-        self.labelData.setObjectName("labelData")
 
         self.retranslateUi(Fcode)
         QtCore.QMetaObject.connectSlotsByName(Fcode)
@@ -67,8 +83,10 @@ class Ui_Fcode(object):
     def retranslateUi(self, Fcode):
         _translate = QtCore.QCoreApplication.translate
         Fcode.setWindowTitle(_translate("Fcode", "Frame"))
-        self.CancelBTN.setText(_translate("Fcode", "Quit"))
-        self.FeedLabel.setStyleSheet("QLabel {border:5px solid white;"
+        self.CancelBTN.setText(_translate("Fcode", "Export"))
+        self.current.setText(_translate("Fcode", "Current"))
+        self.history.setText(_translate("Fcode", "History"))
+        self.FeedLabel.setStyleSheet("QLabel {border:8px solid white;"
                                      " border-radius: 20px; "
                                      "background-color: transparent;}")
         self.FeedLabel.setMinimumSize(QtCore.QSize(300, 300))
@@ -77,7 +95,6 @@ class Ui_Fcode(object):
         self.FeedLabel.setMovie(self.movie)
         self.movie.start()
         self.QrCodeData.setText(_translate("Fcode", "Scanning..."))
-        self.labelData.setText(_translate("Fcode", "Data:"))
 import background_rc
 import qrcode_rc
 
